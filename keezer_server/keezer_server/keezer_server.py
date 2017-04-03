@@ -1,5 +1,7 @@
 import os
 import sqlite3
+import random
+import string
 from flask import Flask
 from flask import Flask, request, session, g, redirect, url_for, abort
 
@@ -39,7 +41,7 @@ def add_token():
 	"""Creates and returns a new token."""
 	db = get_db()
 	token = ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(64))
-	query_db('insert into token (token, active) values (?, 1)', token)
+	query_db('insert into token (token, active) values (?, 1)', [token])
 	return token
 
 @app.cli.command('addtoken')
