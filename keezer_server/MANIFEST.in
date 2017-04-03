@@ -1,0 +1,3 @@
+graft keezer_server/templates
+graft keezer_server/static
+include keezer_server/schema.sql
