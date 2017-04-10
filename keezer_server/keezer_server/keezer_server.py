@@ -32,9 +32,11 @@ def initdb_command():
 	print('Initialized the database.')
 
 def query_db(query, args=(), one=False):
-	cur = get_db().execute(query, args)
+	db = get_db()
+	cur = db.execute(query, args)
 	rv = cur.fetchall()
 	cur.close()
+	db.commit()
 	return (rv[0] if rv else None) if one else rv
 
 def add_token():
@@ -49,6 +51,19 @@ def addtoken():
 	"""Adds an API Token"""
 	token = add_token()
 	print('Added token: %s' % token)
+
+def get_tokens():
+	""" Get all the active tokens in the datbase."""
+	db = get_db()
+	return query_db('select token from token')
+
+@app.cli.command('gettokens')
+def gettokens():
+	"""Lists all the active tokens."""
+	tokens = get_tokens()
+	print('Tokens:')
+	for t in tokens:
+		print('%s' % t['token'])
 
 def connect_db():
 	"""Connects to the sqlite database specified in the config"""
