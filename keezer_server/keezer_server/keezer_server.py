@@ -2,6 +2,7 @@ import os
 import sqlite3
 import random
 import string
+import click
 from flask import Flask
 from flask import Flask, request, session, g, redirect, url_for, abort
 
@@ -54,7 +55,6 @@ def addtoken():
 
 def get_tokens():
 	""" Get all the active tokens in the datbase."""
-	db = get_db()
 	return query_db('select token from token')
 
 @app.cli.command('gettokens')
@@ -64,6 +64,33 @@ def gettokens():
 	print('Tokens:')
 	for t in tokens:
 		print('%s' % t['token'])
+
+def add_sensor(description):
+	"""Creates a new sensor."""
+	db = get_db()
+	query_db('insert into sensor (description) values (?)', [description])
+	return query_db('select last_insert_rowid() as sensorid', [], True)
+	
+
+@app.cli.command('addsensor')
+@click.argument('description')
+def addsensor(description):
+	"""Adds a sensor"""
+	sensor = add_sensor(description)
+	print('Added sensor id: %d' % sensor['sensorid'])
+
+def get_sensors():
+	""" Gets all the sensors in the database."""
+	db = get_db()
+	return query_db('select sensorid, description from sensor')
+
+@app.cli.command('getsensors')
+def getsensors():
+	"""Lists all the sensors."""
+	sensors = get_sensors()
+	print('Sensors:')
+	for s in sensors:
+		print('{0}    {1}'.format(s['sensorid'], s['description']))
 
 def connect_db():
 	"""Connects to the sqlite database specified in the config"""
