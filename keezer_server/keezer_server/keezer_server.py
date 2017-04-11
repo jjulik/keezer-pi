@@ -4,7 +4,8 @@ import random
 import string
 import click
 from flask import Flask
-from flask import Flask, request, session, g, redirect, url_for, abort
+from flask import Flask, request, session, g, redirect, url_for, abort, Response
+from functools import wraps
 
 app = Flask(__name__)
 
@@ -15,9 +16,32 @@ app.config.update(dict(
 
 app.config.from_envvar('KEEZER_SETTINGS', silent=True)
 
+def auth_required(f):
+	@wraps(f)
+	def decorated_function(*args, **kwargs):
+		token = request.headers.get('Authorization',type=str)
+		if token is None:
+			resp = Response('Unauthorized', status=401)
+			# try to be compliant with RFC 7235
+			resp.headers.set('WWW-Authenticate', 'Bearer realm="{0}", title"Authorization token missing"'.format(request.headers['Host']))
+			return resp
+		db = get_db()
+		queryResult = query_db('select active from token where active = 1 and token = ?',args=[token],one=True)
+		if queryResult is None or queryResult['active'] is None:
+			resp = Response('Invalid token', status=401)
+			resp.headers.set('WWW-Authenticate', 'Bearer realm="{0}", title="Invalid Authorization token"'.format(request.headers['Host']))
+			return resp
+		return f(*args, **kwargs)
+	return decorated_function
+
 @app.route('/')
 def hello_world():
 	return 'Hello, World!'
+
+@app.route('/api/reading', methods=['POST'])
+@auth_required
+def add_reading():
+	return 'Success'
 
 def init_db():
 	"""Initializes the database."""
