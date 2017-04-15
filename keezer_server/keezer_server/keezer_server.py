@@ -40,8 +40,16 @@ def hello_world():
 
 @app.route('/api/reading', methods=['POST'])
 @auth_required
-def add_reading():
-	return 'Success'
+def post_reading():
+	sensor_description = request.json['sensorDescription']
+	reading = request.json['reading']
+	reading_time = request.json['time']
+	sensor_query = query_db('select sensorid from sensor where description = ?', [sensor_description], one=True)
+	if sensor_query is None or sensor_query['sensorid'] is None:
+		resp = Response('Invalid sensor description', status=400)
+		return resp
+	query_db('insert into reading (sensorid, value, [time]) values (?,?,?)', [sensor_query['sensorid'], reading, reading_time])
+	return jsonify({'success': True})
 
 @app.route('/api/error', methods=['POST'])
 @auth_required
@@ -97,24 +105,25 @@ def gettokens():
 	for t in tokens:
 		print('%s' % t['token'])
 
-def add_sensor(description):
+def add_sensor(description, sensortype):
 	"""Creates a new sensor."""
 	db = get_db()
-	query_db('insert into sensor (description) values (?)', [description])
+	query_db('insert into sensor (description, sensortype) values (?, ?)', [description, sensortype])
 	return query_db('select last_insert_rowid() as sensorid', [], True)
 	
 
 @app.cli.command('addsensor')
 @click.argument('description')
-def addsensor(description):
+@click.argument('sensortype')
+def addsensor(description, sensortype):
 	"""Adds a sensor"""
-	sensor = add_sensor(description)
+	sensor = add_sensor(description, sensortype)
 	print('Added sensor id: %d' % sensor['sensorid'])
 
 def get_sensors():
 	""" Gets all the sensors in the database."""
 	db = get_db()
-	return query_db('select sensorid, description from sensor')
+	return query_db('select sensorid, sensortype, description from sensor')
 
 @app.cli.command('getsensors')
 def getsensors():
@@ -122,7 +131,7 @@ def getsensors():
 	sensors = get_sensors()
 	print('Sensors:')
 	for s in sensors:
-		print('{0}    {1}'.format(s['sensorid'], s['description']))
+		print('{0}    {1}    {2}'.format(s['sensorid'], s['sensortype'], s['description']))
 
 def connect_db():
 	"""Connects to the sqlite database specified in the config"""

@@ -7,7 +7,9 @@ create table token (
 drop table if exists sensor;
 create table sensor (
 	sensorid integer primary key autoincrement,
-	description text
+	sensortype text,
+	description text,
+	check (sensortype in ("temperature", "power"))
 );
 
 drop table if exists reading;
