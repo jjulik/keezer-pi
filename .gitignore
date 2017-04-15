@@ -93,3 +93,6 @@ ENV/
 
 # log files
 *.log
+
+# Keezer client config
+*keezer_client.cfg
