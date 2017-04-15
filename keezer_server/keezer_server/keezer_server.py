@@ -4,7 +4,7 @@ import random
 import string
 import click
 from flask import Flask
-from flask import Flask, request, session, g, redirect, url_for, abort, Response
+from flask import Flask, request, session, g, redirect, url_for, abort, Response, jsonify
 from functools import wraps
 
 app = Flask(__name__)
@@ -42,6 +42,14 @@ def hello_world():
 @auth_required
 def add_reading():
 	return 'Success'
+
+@app.route('/api/error', methods=['POST'])
+@auth_required
+def post_error():
+	error = request.json['error']
+	error_time = request.json['time']
+	query_db('insert into clienterror ([time], error) values (?,?)', [error_time, error])
+	return jsonify({'success': True})
 
 def init_db():
 	"""Initializes the database."""
