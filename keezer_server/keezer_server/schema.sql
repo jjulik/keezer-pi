@@ -18,3 +18,9 @@ create table reading (
 	value text not null
 );
 
+drop table if exists clienterror;
+create table clienterror (
+	errorid integer primary key autoincrement,
+	[time] text not null,
+	error text not null
+);
