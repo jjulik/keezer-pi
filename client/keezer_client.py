@@ -31,8 +31,14 @@ FORMAT = '%(asctime)-15s %(message)s'
 logging.basicConfig(filename='keezer_client.log',level=logging.ERROR,format=FORMAT)
 logger = logging.getLogger('keezer_client')
 
-def post_exception_async(url, headers, data):
-	requests.post(url, headers=headers, data=json.dumps(data))	
+def post_async(url, headers, data):
+	try:
+		requests.post(url, headers=headers, data=json.dumps(data))
+	except Exception:
+		# don't log these errors
+		# it could fill up the log fast if the server goes down
+		return
+		
 
 def post_exception(formatted_exception):
 	if server_url is None or api_token is None:
@@ -41,8 +47,23 @@ def post_exception(formatted_exception):
 	headers = { 'Authorization': api_token, 'Content-Type': 'application/json' }
 	data = { 'time': time.asctime(time.localtime()), 'error': formatted_exception }
 	# fire and forget
-	postErrorThread = threading.Thread(target=post_exception_async, args=(url,headers,data))
+	postErrorThread = threading.Thread(target=post_async, args=(url,headers,data))
 	postErrorThread.start()
+
+def post_reading(reading):
+	if server_url is None or api_token is None:
+		return
+	url = server_url + 'api/reading'
+	headers = { 'Authorization': api_token, 'Content-Type': 'application/json' }
+	data = { 'time': time.asctime(reading.time), 'reading': reading.reading, 'sensorDescription': reading.sensor_name }
+	postReadingThread = threading.Thread(target=post_async, args=(url,headers,data))
+	postReadingThread.start()
+
+class Reading():
+	def __init__(self, sensor_name, reading, reading_time):
+		self.sensor_name = sensor_name
+		self.reading = reading
+		self.time = reading_time
 
 # Inherit from dictionary for easy JSON serialization.
 class Sensor(dict):
@@ -55,12 +76,13 @@ class Sensor(dict):
 		try:
 			f = open(self.file_name, 'r')
 			lines = f.readlines()
+			reading_time = time.localtime()
 			equals_pos = lines[1].find('t=')
 			if equals_pos != -1:
 				raw_temp = float(lines[1][equals_pos+2:])
 				#murica
 				temp_f = (raw_temp / 1000.0) * 9.0 / 5.0 + 32.0
-				return temp_f
+				return Reading(self.name, temp_f, reading_time)
 		except Exception:
 			logger.exception('Error reading sensor value for {0}'.format(self.name))
 			post_exception(traceback.format_exc())
@@ -78,6 +100,10 @@ try:
 		if secondary_sensor is not None:
 			secondary_reading = secondary_sensor.get_reading()
 		
+		if primary_reading is not None:
+			post_reading(primary_reading)
+		if secondary_reading is not None:
+			post_reading(secondary_reading)
 		
 		time.sleep(1)
 except KeyboardInterrupt:
