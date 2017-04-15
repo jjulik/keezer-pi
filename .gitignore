@@ -90,3 +90,6 @@ ENV/
 
 # Sqlite db
 *.db
+
+# log files
+*.log
