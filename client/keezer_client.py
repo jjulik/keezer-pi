@@ -7,6 +7,7 @@ import traceback
 import time
 import ConfigParser
 import io
+import threading
 
 # The primary sensor will be used for all sensor readings and determines
 # whether we need to run the freezer.
@@ -30,16 +31,18 @@ FORMAT = '%(asctime)-15s %(message)s'
 logging.basicConfig(filename='keezer_client.log',level=logging.ERROR,format=FORMAT)
 logger = logging.getLogger('keezer_client')
 
+def post_exception_async(url, headers, data):
+	requests.post(url, headers=headers, data=json.dumps(data))	
+
 def post_exception(formatted_exception):
 	if server_url is None or api_token is None:
 		return
-	try:
-		url = server_url + 'api/error'
-		headers = { 'Authorization': api_token, 'Content-Type': 'application/json' }
-		payload = { 'time': time.asctime(time.localtime()), 'error': formatted_exception }
-		requests.post(url, headers=headers, data=json.dumps(payload))
-	except Exception:
-		logger.exception('Error uploading error to server')
+	url = server_url + 'api/error'
+	headers = { 'Authorization': api_token, 'Content-Type': 'application/json' }
+	data = { 'time': time.asctime(time.localtime()), 'error': formatted_exception }
+	# fire and forget
+	postErrorThread = threading.Thread(target=post_exception_async, args=(url,headers,data))
+	postErrorThread.start()
 
 # Inherit from dictionary for easy JSON serialization.
 class Sensor(dict):
