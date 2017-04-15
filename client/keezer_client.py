@@ -35,9 +35,9 @@ def post_exception(formatted_exception):
 		return
 	try:
 		url = server_url + 'api/error'
-		headers = { 'Authorization': api_token }
-		payload = { 'date': time.asctime(time.localtime()), error: formatted_exception }
-		requests.post(url, headers=headers, data=payload)
+		headers = { 'Authorization': api_token, 'Content-Type': 'application/json' }
+		payload = { 'time': time.asctime(time.localtime()), 'error': formatted_exception }
+		requests.post(url, headers=headers, data=json.dumps(payload))
 	except Exception:
 		logger.exception('Error uploading error to server')
 
