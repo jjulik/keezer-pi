@@ -8,6 +8,7 @@ import time
 import ConfigParser
 import io
 import threading
+import RPi.GPIO as GPIO
 
 # The primary sensor will be used for all sensor readings and determines
 # whether we need to run the freezer.
@@ -18,7 +19,7 @@ if config_file is None:
 	config_file = 'keezer_client.cfg'
 with open(config_file, 'r') as f:
 	config_text = f.read()
-default_config = { 'secondary_temp': None, 'url': None, 'api_token': None }
+default_config = { 'secondary_temp': None, 'url': None, 'api_token': None, 'temperature': 40.0, 'deviation': 2.0, 'min_runtime': 60, 'cooldown': 300, 'fridge_name': 'fridgey' }
 config = ConfigParser.SafeConfigParser(default_config, allow_no_value=True)
 config.readfp(io.BytesIO(config_text))
 primary_sensor_name = config.get('sensor', 'primary_temp')
@@ -26,6 +27,12 @@ secondary_sensor_name = config.get('sensor', 'secondary_temp')
 relay_gpio_pin = config.getint('sensor', 'relay_pin')
 server_url = config.get('server', 'url')
 api_token = config.get('server', 'api_token')
+desired_temperature = config.getfloat('fridge', 'temperature')
+deviation = config.getfloat('fridge', 'deviation')
+min_runtime = config.getint('fridge', 'min_runtime')
+cooldown = config.getint('fridge', 'cooldown')
+fridge_name = config.get('fridge', 'fridge_name')
+max_temperature = desired_temperature + deviation
 
 FORMAT = '%(asctime)-15s %(message)s'
 logging.basicConfig(filename='keezer_client.log',level=logging.ERROR,format=FORMAT)
@@ -95,19 +102,54 @@ if secondary_sensor_name is not None:
 	secondary_sensor = Sensor(secondary_sensor_name)
 
 try:
+	# setup gpio pin for relay
+	# we are using BCM numbering
+	GPIO.setmode(GPIO.BCM)
+	GPIO.setup(relay_gpio_pin, GPIO.OUT)
+	GPIO.output(relay_gpio_pin, False)
+
+	# keep track of when the fridge was last turned on or off
+	# we don't want to be turning it on/off frequently
+	fridge_turned_on = 0
+	fridge_turned_off = 0
+	fridge_enabled = False
 	while True:
 		primary_reading = primary_sensor.get_reading()
 		if secondary_sensor is not None:
 			secondary_reading = secondary_sensor.get_reading()
-		
+			
 		if primary_reading is not None:
 			post_reading(primary_reading)
 		if secondary_reading is not None:
 			post_reading(secondary_reading)
 		
+		reading_to_use = primary_reading
+		if reading_to_use is None:
+			reading_to_use = secondary_reading
+		if reading_to_use is None and fridge_enabled:
+			GPIO.output(relay_gpio_pin, False)
+			fridge_enabled = False
+			fridge_turned_off = time.time()
+
+		if reading_to_use is not None:
+			if fridge_enabled:
+				run_time = time.time() - fridge_turned_on
+				if reading_to_use.reading < desired_temperature and run_time >= min_runtime:
+					GPIO.output(relay_gpio_pin, False)
+					fridge_enabled = False
+					fridge_turned_off = time.time()
+			else:
+				time_since_last_ran = time.time() - fridge_turned_off
+				if reading_to_use.reading > max_temperature and time_since_last_ran >= cooldown:
+					GPIO.output(relay_gpio_pin, True)
+					fridge_enabled = True
+					fridge_turned_on = time.time()
+
 		time.sleep(1)
 except KeyboardInterrupt:
+	GPIO.cleanup()
 	exit(1)
 except Exception:
+	GPIO.cleanup()
 	logger.exception('Fatal error in main loop')
 	post_exception(traceback.format_exc())
