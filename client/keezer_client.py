@@ -98,6 +98,7 @@ class Sensor(dict):
 os.system('modprobe w1-gpio')
 os.system('modprobe w1-therm')
 primary_sensor = Sensor(primary_sensor_name)
+secondary_sensor = None
 if secondary_sensor_name is not None:
 	secondary_sensor = Sensor(secondary_sensor_name)
 
@@ -115,6 +116,7 @@ try:
 	fridge_enabled = False
 	while True:
 		primary_reading = primary_sensor.get_reading()
+		secondary_reading = None
 		if secondary_sensor is not None:
 			secondary_reading = secondary_sensor.get_reading()
 			
