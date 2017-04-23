@@ -96,3 +96,6 @@ ENV/
 
 # Keezer client config
 *keezer_client.cfg
+
+# KiCAD
+*.kicad_pcb-bak

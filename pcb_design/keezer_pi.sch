@@ -29,7 +29,7 @@ LIBS:atmel
 LIBS:contrib
 LIBS:valves
 LIBS:pi_zero
-LIBS:keezer-cache
+LIBS:keezer_pi-cache
 EELAYER 25 0
 EELAYER END
 $Descr A4 11693 8268
@@ -173,7 +173,6 @@ Text GLabel 5050 4750 2    60   Input ~ 0
 BCM17
 Text GLabel 5050 5050 2    60   Input ~ 0
 TRANSISTOR_BASE
-NoConn ~ 5250 3650
 NoConn ~ 5250 3850
 NoConn ~ 5250 3950
 NoConn ~ 5250 4050
@@ -227,9 +226,7 @@ $EndComp
 Wire Wire Line
 	5800 3300 5800 3550
 Wire Wire Line
-	4000 3550 5250 3550
-Wire Wire Line
-	5100 3550 5100 3300
+	5100 3300 5100 3650
 Wire Wire Line
 	5750 3950 6300 3950
 Wire Wire Line
@@ -345,4 +342,9 @@ Wire Wire Line
 	7000 3250 7000 3300
 Wire Wire Line
 	7400 4050 7100 4050
+NoConn ~ 5250 3550
+Wire Wire Line
+	5100 3650 5250 3650
+Wire Wire Line
+	4000 3550 5100 3550
 $EndSCHEMATC
