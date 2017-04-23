@@ -3,3 +3,8 @@ primary_temp: 28-0416717fbfff
 secondary_temp: 28-051670fd64ff
 relay_pin: 1
 [server]
+[fridge]
+temperature: 40.0
+deviation: 2
+min_runtime: 60
+cooldown: 300
