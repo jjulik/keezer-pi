@@ -1,0 +1,13 @@
+[Unit]
+Description=Keezer Pi client service. Controls a relay based on temperature readings
+After=syslog.target
+
+[Service]
+Type=idle
+ExecStart=/usr/bin/python /opt/keezer_client/keezer_client.py
+StandardOutput=syslog
+StandardError=syslog
+Environment=KEEZER_CLIENT_SETTINGS=/etc/opt/keezer_client.cfg
+
+[Install]
+WantedBy=multi-user.target
