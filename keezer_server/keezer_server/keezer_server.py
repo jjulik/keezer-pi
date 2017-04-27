@@ -4,7 +4,7 @@ import random
 import string
 import click
 from flask import Flask
-from flask import Flask, request, session, g, redirect, url_for, abort, Response, jsonify
+from flask import Flask, request, session, g, redirect, url_for, abort, Response, jsonify, render_template
 from functools import wraps
 
 app = Flask(__name__)
@@ -36,7 +36,7 @@ def auth_required(f):
 
 @app.route('/')
 def hello_world():
-	return 'Hello, World!'
+	return render_template('index.html')
 
 @app.route('/api/reading', methods=['POST'])
 @auth_required
@@ -65,6 +65,27 @@ def init_db():
 	with app.open_resource('schema.sql', mode='r') as f:
 		db.cursor().executescript(f.read())
 	db.commit()
+
+@app.route('/api/sensors', methods=['GET'])
+def api_get_sensors():
+	sensors = get_sensors()
+	sensor_list = []
+	for s in sensors:
+		sensor_list.append({'sensorid': s['sensorid'],'sensortype': s['sensortype'], 'description': s['description']})
+	return jsonify(sensor_list)	
+
+@app.route('/api/readings')
+def api_get_readings():
+	timelimit = request.args.get('timelimit', 300, type=int)
+	sensorid = request.args.get('sensorid', type=int)
+	print timelimit
+	print sensorid
+	query = query_db("select * from reading where sensorid = ? order by readingid desc limit 100", [sensorid])
+	readings = []
+	for r in query:
+		readings.append({'readingid': r['readingid'], 'value': r['value'], 'time': r['time']})
+	return jsonify(readings)
+	
 
 @app.cli.command('initdb')
 def initdb_command():
