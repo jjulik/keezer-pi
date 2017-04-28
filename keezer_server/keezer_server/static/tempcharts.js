@@ -2,7 +2,7 @@
 	"use strict";
 
 	var charts = [],
-		timeFormat = "MM/DD/YY HH:mm:ss";
+		timeFormat = "MM/DD/YY h:mm:ss a";
 
 	function KeezerChart(sensorid, description, chart) {
 		var self = this,
@@ -18,7 +18,7 @@
 				dataset.label = "Temperature";
 				dataset.data = data.map(function (d) {
 					return {
-						x: new moment(d.time).format(timeFormat),
+						x: moment.unix(d.time).format(timeFormat),
 						y: d.value
 					};
 				});
