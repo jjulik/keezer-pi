@@ -52,7 +52,7 @@ def post_exception(formatted_exception):
 		return
 	url = server_url + 'api/error'
 	headers = { 'Authorization': api_token, 'Content-Type': 'application/json' }
-	data = { 'time': time.asctime(time.localtime()), 'error': formatted_exception }
+	data = { 'time': time.time(), 'error': formatted_exception }
 	# fire and forget
 	postErrorThread = threading.Thread(target=post_async, args=(url,headers,data))
 	postErrorThread.start()
@@ -62,7 +62,7 @@ def post_reading(reading):
 		return
 	url = server_url + 'api/reading'
 	headers = { 'Authorization': api_token, 'Content-Type': 'application/json' }
-	data = { 'time': time.asctime(reading.time), 'reading': reading.reading, 'sensorDescription': reading.sensor_name }
+	data = { 'time': reading.time, 'reading': reading.reading, 'sensorDescription': reading.sensor_name }
 	postReadingThread = threading.Thread(target=post_async, args=(url,headers,data))
 	postReadingThread.start()
 
@@ -83,7 +83,7 @@ class Sensor(dict):
 		try:
 			f = open(self.file_name, 'r')
 			lines = f.readlines()
-			reading_time = time.localtime()
+			reading_time = time.time()
 			equals_pos = lines[1].find('t=')
 			if equals_pos != -1:
 				raw_temp = float(lines[1][equals_pos+2:])
