@@ -2,20 +2,29 @@
 	"use strict";
 
 	var charts = [],
-		timeFormat = "MM/DD/YY h:mm:ss a";
+		timeFormat = "MM/DD/YY h:mm:ss a",
+		chartDatasetLabels = {
+			power: 'Power',
+			temperature: 'Temperature'
+		},
+		chartYAxesLabels = {
+			power: 'On/Off',
+			temperature: 'Temperature (F)'
+		};
 
-	function KeezerChart(sensorid, description, chart) {
+	function KeezerChart(sensorid, description, type, chart) {
 		var self = this,
 			timespan = 300;
 
 		self.sensorid = sensorid;
 		self.description = description;
+		self.type = type;
 		self.chart = chart;
 
 		self.getData = function() {
 			ajax('api/readings', { data: { timespan: timespan, sensorid: self.sensorid }}).then(function (data) {
 				var dataset = {};
-				dataset.label = "Temperature";
+				dataset.label = chartDatasetLabels[self.type];
 				dataset.data = data.map(function (d) {
 					return {
 						x: moment.unix(d.time).format(timeFormat),
@@ -37,8 +46,6 @@
 			charts = sensors.map(function (sensor) {
 				var chartElement = document.createElement('canvas'), chart;
 				chartElement.id = "chart-" + sensor.sensorid;
-				chartElement.width = 400;
-				chartElement.height = 400;
 				container.appendChild(chartElement);
 				chart = new Chart(chartElement.getContext("2d"), {
 					type: 'line',
@@ -66,13 +73,13 @@
 								display: true,
 								scaleLabel: {
 									display: true,
-									labelString: 'Temperature (F)'
+									labelString: chartYAxesLabels[sensor.sensortype]
 								}
 							}]
 						}
 					}
 				});
-				return new KeezerChart(sensor.sensorid, sensor.description, chart);
+				return new KeezerChart(sensor.sensorid, sensor.description, sensor.sensortype, chart);
 			});
 			charts.forEach(function (chart) {
 				chart.getData();
