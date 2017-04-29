@@ -49,15 +49,21 @@
 		ajax('api/sensors').then(function(sensors) {
 			var container = document.getElementById('chartContainer');
 			charts = sensors.map(function (sensor) {
-				var chartElement = document.createElement('canvas'), chart, chartOptions;
+				var chartElement = document.createElement('canvas'),
+					chartConstrainerElement = document.createElement('div'),
+					chart, chartOptions;
+				chartConstrainerElement.className = 'chart-constrainer chart-' + sensor.sensortype;
 				chartElement.id = "chart-" + sensor.sensorid;
-				container.appendChild(chartElement);
+				container.appendChild(chartConstrainerElement);
+				chartConstrainerElement.appendChild(chartElement);
 				chartOptions = {
 					type: 'line',
 					data: {
 						datasets: []
 					},
 					options: {
+						responsive: true,
+						maintainAspectRatio: false,
 						title: {
 							display: true,
 							text: sensor.description
