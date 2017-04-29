@@ -44,12 +44,20 @@ def post_reading():
 	sensor_description = request.json['sensorDescription']
 	reading = request.json['reading']
 	reading_time = request.json['time']
-	sensor_query = query_db('select sensorid from sensor where description = ?', [sensor_description], one=True)
+	sensor_query = query_db('select sensorid, sensortype from sensor where description = ?', [sensor_description], one=True)
 	if sensor_query is None or sensor_query['sensorid'] is None:
 		resp = Response('Invalid sensor description', status=400)
 		return resp
-	query_db('insert into reading (sensorid, value, [time]) values (?,?,?)', [sensor_query['sensorid'], reading, reading_time])
+	sensorid = sensor_query['sensorid']
+	sensortype = sensor_query['sensortype']
+	if sensortype == 'power':
+		previous_time = float(reading_time) - 1.0
+		add_reading(sensorid, not bool(reading), previous_time)
+	add_reading(sensorid, reading, reading_time)
 	return jsonify({'success': True})
+
+def add_reading(sensorid, reading, reading_time):
+	query_db('insert into reading (sensorid, value, [time]) values (?,?,?)', [sensorid, reading, reading_time])
 
 @app.route('/api/error', methods=['POST'])
 @auth_required
@@ -134,8 +142,8 @@ def add_sensor(description, sensortype):
 	
 
 @app.cli.command('addsensor')
-@click.argument('description')
-@click.argument('sensortype')
+@click.option('--description', '-d', prompt=True, type=str)
+@click.option('--sensortype', '-t', prompt=True, type=str)
 def addsensor(description, sensortype):
 	"""Adds a sensor"""
 	sensor = add_sensor(description, sensortype)
