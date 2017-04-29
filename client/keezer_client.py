@@ -132,6 +132,8 @@ try:
 			GPIO.output(relay_gpio_pin, False)
 			fridge_enabled = False
 			fridge_turned_off = time.time()
+			power_reading = Reading(fridge_name, 0, fridge_turned_off)
+			post_reading(power_reading)
 
 		if reading_to_use is not None:
 			if fridge_enabled:
@@ -140,12 +142,16 @@ try:
 					GPIO.output(relay_gpio_pin, False)
 					fridge_enabled = False
 					fridge_turned_off = time.time()
+					power_reading = Reading(fridge_name, 0, fridge_turned_off)
+					post_reading(power_reading)
 			else:
 				time_since_last_ran = time.time() - fridge_turned_off
 				if reading_to_use.reading > max_temperature and time_since_last_ran >= cooldown:
 					GPIO.output(relay_gpio_pin, True)
 					fridge_enabled = True
 					fridge_turned_on = time.time()
+					power_reading = Reading(fridge_name, 1, fridge_turned_on)
+					post_reading(power_reading)
 
 		time.sleep(1)
 except KeyboardInterrupt:
