@@ -11,7 +11,7 @@ if [ ! -d /var/opt/keezer_client ]; then
 fi
 
 if [ ! -f /etc/opt/keezer_client.cfg ]; then
-	cp ./keezer_client.cfg.example /etc/opt/keezer_client.cfg 
+	cp ./keezer_client.cfg /etc/opt/keezer_client.cfg 
 fi
 cp ./keezer_client.py /opt/keezer_client/keezer_client.py
 apt-get install -y python python-rpi.gpio 
